@@ -52,6 +52,7 @@ export default function AddWantScreen() {
         member_id: selectedMember,
         goods_type_id: selectedGoods,
         quantity: parseInt(quantity) || 1,
+        is_fulfilled: false,
       },
       { onConflict: 'user_id,event_id,member_id,goods_type_id' }
     );

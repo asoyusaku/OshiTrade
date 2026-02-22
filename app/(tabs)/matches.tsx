@@ -1,16 +1,18 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { Text, Card, Button } from 'react-native-paper';
 import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useEventStore } from '../../src/providers/EventProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
+import { useColors } from '../../src/providers/ThemeProvider';
 import { COLORS, SPACING, FONT_SIZE } from '../../src/shared/utils/constants';
 import type { BidirectionalMatch } from '../../src/lib/types';
 
 export default function MatchesScreen() {
   const { user } = useAuth();
   const { activeEvent } = useEventStore();
+  const colors = useColors();
   const [matches, setMatches] = useState<BidirectionalMatch[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,15 @@ export default function MatchesScreen() {
       findMatches();
     }, [findMatches])
   );
+
+  // マッチを定期的に再検索（10秒間隔）
+  useEffect(() => {
+    if (!user || !activeEvent) return;
+    const interval = setInterval(() => {
+      findMatches();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [user, activeEvent, findMatches]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -133,7 +144,7 @@ export default function MatchesScreen() {
 
         <Button
           mode="contained"
-          buttonColor={COLORS.primary}
+          buttonColor={colors.primary}
           style={styles.actionButton}
           contentStyle={{ paddingVertical: 4 }}
           labelStyle={{ fontWeight: 'bold' }}

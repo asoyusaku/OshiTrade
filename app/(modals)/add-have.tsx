@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { Text, Button, Chip, TextInput } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Pressable, Image, Alert } from 'react-native';
+import { Text, Button, Chip, TextInput, IconButton } from 'react-native-paper';
 import { router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useEventStore } from '../../src/providers/EventProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
@@ -17,6 +19,7 @@ export default function AddHaveScreen() {
   const [selectedGoods, setSelectedGoods] = useState<number | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [note, setNote] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,6 +39,72 @@ export default function AddHaveScreen() {
     });
   }, [activeEvent]);
 
+  const pickImage = async (source: 'camera' | 'library') => {
+    const permission =
+      source === 'camera'
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert('権限エラー', 'カメラまたはギャラリーへのアクセスを許可してください');
+      return;
+    }
+
+    const result =
+      source === 'camera'
+        ? await ImagePicker.launchCameraAsync({ quality: 0.8 })
+        : await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            quality: 0.8,
+          });
+
+    if (!result.canceled && result.assets[0]) {
+      // リサイズ・圧縮
+      const manipulated = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [{ resize: { width: 800 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      setPhotoUri(manipulated.uri);
+    }
+  };
+
+  const showImageOptions = () => {
+    Alert.alert('写真を追加', '方法を選択してください', [
+      { text: 'カメラで撮影', onPress: () => pickImage('camera') },
+      { text: 'ギャラリーから選択', onPress: () => pickImage('library') },
+      { text: 'キャンセル', style: 'cancel' },
+    ]);
+  };
+
+  const uploadPhoto = async (): Promise<string | null> => {
+    if (!photoUri || !user || !activeEvent) return null;
+
+    const fileName = `${user.id}/${activeEvent.id}/${Date.now()}.jpg`;
+
+    const response = await fetch(photoUri);
+    const blob = await response.blob();
+    const arrayBuffer = await new Response(blob).arrayBuffer();
+
+    const { error: uploadError } = await supabase.storage
+      .from('have-item-photos')
+      .upload(fileName, arrayBuffer, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.warn('Upload error:', uploadError.message);
+      return null;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('have-item-photos')
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl;
+  };
+
   const handleSave = async () => {
     if (!selectedMember || !selectedGoods) {
       setError('メンバーとグッズの種類を選択してください');
@@ -46,6 +115,14 @@ export default function AddHaveScreen() {
     setSaving(true);
     setError('');
 
+    let photoUrl: string | null = null;
+    if (photoUri) {
+      photoUrl = await uploadPhoto();
+      if (!photoUrl) {
+        setError('写真のアップロードに失敗しました。写真なしで保存します。');
+      }
+    }
+
     const { error: dbError } = await supabase.from('have_items').upsert(
       {
         user_id: user.id,
@@ -54,6 +131,8 @@ export default function AddHaveScreen() {
         goods_type_id: selectedGoods,
         quantity: parseInt(quantity) || 1,
         note: note || null,
+        photo_url: photoUrl,
+        is_available: true,
       },
       { onConflict: 'user_id,event_id,member_id,goods_type_id' }
     );
@@ -124,7 +203,33 @@ export default function AddHaveScreen() {
         </Pressable>
       </View>
 
-      <Text style={styles.stepTitle}>4. メモ（任意）</Text>
+      <Text style={styles.stepTitle}>4. 写真（任意）</Text>
+      {photoUri ? (
+        <View style={styles.photoContainer}>
+          <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+          <View style={styles.photoActions}>
+            <IconButton
+              icon="camera-retake"
+              size={24}
+              onPress={showImageOptions}
+              iconColor={COLORS.primary}
+            />
+            <IconButton
+              icon="delete"
+              size={24}
+              onPress={() => setPhotoUri(null)}
+              iconColor={COLORS.error}
+            />
+          </View>
+        </View>
+      ) : (
+        <Pressable style={styles.photoPlaceholder} onPress={showImageOptions}>
+          <Text style={styles.photoPlaceholderIcon}>📷</Text>
+          <Text style={styles.photoPlaceholderText}>タップして写真を追加</Text>
+        </Pressable>
+      )}
+
+      <Text style={styles.stepTitle}>5. メモ（任意）</Text>
       <TextInput
         value={note}
         onChangeText={setNote}
@@ -201,6 +306,39 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     minWidth: 40,
     textAlign: 'center',
+  },
+  photoContainer: {
+    alignItems: 'center',
+  },
+  photoPreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+  },
+  photoActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: SPACING.xs,
+  },
+  photoPlaceholder: {
+    width: '100%',
+    height: 120,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+  },
+  photoPlaceholderIcon: {
+    fontSize: 32,
+    marginBottom: SPACING.xs,
+  },
+  photoPlaceholderText: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
   },
   noteInput: {
     backgroundColor: COLORS.white,

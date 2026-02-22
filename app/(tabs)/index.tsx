@@ -5,12 +5,14 @@ import { router } from 'expo-router';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useEventStore } from '../../src/providers/EventProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
+import { useColors } from '../../src/providers/ThemeProvider';
 import { COLORS, SPACING, FONT_SIZE } from '../../src/shared/utils/constants';
 import type { Event, IdolGroup } from '../../src/lib/types';
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const { activeEvent, setActiveEvent } = useEventStore();
+  const colors = useColors();
   const [events, setEvents] = useState<Event[]>([]);
   const [groups, setGroups] = useState<IdolGroup[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
@@ -55,6 +57,11 @@ export default function HomeScreen() {
 
     // 既に参加中のイベントをタップした場合は解除
     if (activeEvent?.id === event.id) {
+      await supabase
+        .from('event_participants')
+        .delete()
+        .eq('event_id', event.id)
+        .eq('user_id', user.id);
       setActiveEvent(null);
       setSnackMessage('イベントの参加を解除しました');
       return;
@@ -89,11 +96,11 @@ export default function HomeScreen() {
         activeOpacity={0.7}
         onPress={() => handleJoinEvent(item)}
       >
-        <Card style={[styles.card, isActive && styles.activeCard]}>
+        <Card style={[styles.card, isActive && { borderColor: colors.primary, borderWidth: 2 }]}>
           <Card.Content>
             <View style={styles.cardHeader}>
-              <View style={[styles.groupTag, isActive && styles.activeGroupTag]}>
-                <Text style={styles.groupTagText}>
+              <View style={[styles.groupTag, { backgroundColor: colors.primaryLight }]}>
+                <Text style={[styles.groupTagText, { color: colors.primaryDark }]}>
                   {item.idol_groups?.name || ''}
                 </Text>
               </View>
@@ -143,7 +150,7 @@ export default function HomeScreen() {
       </View>
 
       {activeEvent && (
-        <View style={styles.activeEventBanner}>
+        <View style={[styles.activeEventBanner, { backgroundColor: colors.primary }]}>
           <Text style={styles.bannerText}>
             参加中: {activeEvent.name}
           </Text>
@@ -155,8 +162,8 @@ export default function HomeScreen() {
           mode="outlined"
           icon="lightbulb-on-outline"
           onPress={() => router.push('/(modals)/suggest-event')}
-          style={styles.suggestButton}
-          textColor={COLORS.primary}
+          style={[styles.suggestButton, { borderColor: colors.primary }]}
+          textColor={colors.primary}
         >
           イベントを提案する
         </Button>
@@ -211,7 +218,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   activeEventBanner: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#FF6B9D', // Will be overridden dynamically
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     marginHorizontal: SPACING.md,
@@ -232,7 +239,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   activeCard: {
-    borderColor: COLORS.primary,
     borderWidth: 2,
   },
   cardHeader: {
@@ -242,14 +248,12 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   groupTag: {
-    backgroundColor: COLORS.primaryLight,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   activeGroupTag: {},
   groupTagText: {
-    color: COLORS.primaryDark,
     fontSize: FONT_SIZE.xs,
     fontWeight: '600',
   },
@@ -287,7 +291,6 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   suggestButton: {
-    borderColor: COLORS.primary,
     borderRadius: 12,
   },
   snackbar: {

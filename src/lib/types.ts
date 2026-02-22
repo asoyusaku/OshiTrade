@@ -14,6 +14,7 @@ export type Member = {
   generation: number | null;
   is_active: boolean;
   sort_order: number;
+  color: string | null;
 };
 
 export type GoodsType = {
@@ -42,6 +43,7 @@ export type Profile = {
   display_name: string | null;
   avatar_url: string | null;
   push_token: string | null;
+  oshi_member_id: number | null;
   is_admin: boolean;
   created_at: string;
   updated_at: string;
@@ -73,6 +75,7 @@ export type HaveItem = {
   goods_type_id: number;
   quantity: number;
   note: string | null;
+  photo_url: string | null;
   is_available: boolean;
   created_at: string;
   members?: Member;
@@ -136,6 +139,16 @@ export type Message = {
   content: string;
   created_at: string;
   read_at: string | null;
+};
+
+export type LocationShare = {
+  id: number;
+  chat_room_id: number;
+  user_id: string;
+  latitude: number;
+  longitude: number;
+  is_active: boolean;
+  updated_at: string;
 };
 
 export type BidirectionalMatch = {

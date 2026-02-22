@@ -1,20 +1,23 @@
 import { Tabs } from 'expo-router';
 // @ts-expect-error - vector-icons types not separately installed
 import { Ionicons } from '@expo/vector-icons';
+import { useColors } from '../../src/providers/ThemeProvider';
 import { COLORS } from '../../src/shared/utils/constants';
 
 export default function TabsLayout() {
+  const colors = useColors();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: COLORS.primary,
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
         tabBarStyle: {
           backgroundColor: COLORS.white,
           borderTopColor: COLORS.border,
         },
         headerStyle: {
-          backgroundColor: COLORS.primary,
+          backgroundColor: colors.primary,
         },
         headerTintColor: COLORS.white,
         headerTitleStyle: {

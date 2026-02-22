@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl, Pressable } from 'react-native';
 import { Text, Avatar } from 'react-native-paper';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../../src/shared/utils/supabase';
 import { useAuth } from '../../../src/providers/AuthProvider';
+import { useColors } from '../../../src/providers/ThemeProvider';
 import { COLORS, SPACING, FONT_SIZE } from '../../../src/shared/utils/constants';
 
 type ChatRoomDisplay = {
@@ -18,6 +19,7 @@ type ChatRoomDisplay = {
 
 export default function ChatListScreen() {
   const { user } = useAuth();
+  const colors = useColors();
   const [chatRooms, setChatRooms] = useState<ChatRoomDisplay[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -74,25 +76,29 @@ export default function ChatListScreen() {
     setChatRooms(displayRooms);
   }, [user]);
 
-  useEffect(() => {
-    fetchChatRooms();
-  }, [fetchChatRooms]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchChatRooms();
+    }, [fetchChatRooms])
+  );
 
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel('chat-list')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        () => fetchChatRooms()
-      )
-      .subscribe();
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) return;
+      const channel = supabase
+        .channel('chat-list')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'messages' },
+          () => fetchChatRooms()
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, fetchChatRooms]);
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }, [user, fetchChatRooms])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -114,7 +120,7 @@ export default function ChatListScreen() {
       <Avatar.Text
         size={48}
         label={item.partner_name.charAt(0)}
-        style={styles.avatar}
+        style={[styles.avatar, { backgroundColor: colors.primaryLight }]}
       />
       <View style={styles.roomInfo}>
         <View style={styles.roomHeader}>
@@ -126,7 +132,7 @@ export default function ChatListScreen() {
             {item.last_message || 'メッセージなし'}
           </Text>
           {item.unread_count > 0 && (
-            <View style={styles.badge}>
+            <View style={[styles.badge, { backgroundColor: colors.primary }]}>
               <Text style={styles.badgeText}>{item.unread_count}</Text>
             </View>
           )}
@@ -170,7 +176,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatar: {
-    backgroundColor: COLORS.primaryLight,
     marginRight: SPACING.md,
   },
   roomInfo: {
@@ -202,7 +207,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   badge: {
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
     minWidth: 24,
     height: 24,

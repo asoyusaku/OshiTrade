@@ -1,11 +1,14 @@
 import { Stack } from 'expo-router';
+import { useColors } from '../../../src/providers/ThemeProvider';
 import { COLORS } from '../../../src/shared/utils/constants';
 
 export default function ChatLayout() {
+  const colors = useColors();
+
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: COLORS.primary },
+        headerStyle: { backgroundColor: colors.primary },
         headerTintColor: COLORS.white,
         headerTitleStyle: { fontWeight: 'bold' },
       }}

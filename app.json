@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.oshitrade.app"
+      "bundleIdentifier": "com.oshitrade.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "イベント会場で交換相手と合流するために位置情報を使用します"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +27,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.oshitrade.app"
+      "package": "com.oshitrade.app",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -33,7 +37,13 @@
     "plugins": [
       "expo-router",
       "expo-web-browser",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "イベント会場で交換相手と合流するために位置情報を使用します"
+        }
+      ]
     ]
   }
 }

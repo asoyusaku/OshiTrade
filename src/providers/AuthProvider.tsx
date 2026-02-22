@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../shared/utils/supabase';
+import { useThemeStore } from './ThemeProvider';
 import type { Profile } from '../lib/types';
 
 type AuthContextType = {
@@ -36,34 +37,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, oshi_member:oshi_member_id(color)')
         .eq('id', userId)
         .single();
+
       setProfile(data);
+      const oshiColor = (data as any)?.oshi_member?.color || null;
+      useThemeStore.getState().setOshiColor(oshiColor);
     } catch (e) {
       console.warn('fetchProfile failed:', e);
       setProfile(null);
+      useThemeStore.getState().setOshiColor(null);
     }
   };
 
   useEffect(() => {
+    let initialDone = false;
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setLoading(false);
+      initialDone = true;
       if (session?.user) {
         fetchProfile(session.user.id);
       }
-      setLoading(false);
     }).catch(() => {
       setLoading(false);
+      initialDone = true;
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
+        if (!initialDone) return;
         setSession(session);
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          fetchProfile(session.user.id);
         } else {
           setProfile(null);
+          useThemeStore.getState().setOshiColor(null);
         }
       }
     );

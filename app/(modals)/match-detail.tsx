@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Text, Button, Card, Chip, Divider } from 'react-native-paper';
-import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, Alert, Image, Pressable, Modal, Dimensions } from 'react-native';
+import { Text, Button, Card, Chip, Divider, IconButton } from 'react-native-paper';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { COLORS, SPACING, FONT_SIZE } from '../../src/shared/utils/constants';
@@ -14,46 +14,74 @@ export default function MatchDetailScreen() {
   const [matchItems, setMatchItems] = useState<MatchItem[]>([]);
   const [partner, setPartner] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [zoomPhoto, setZoomPhoto] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchMatch = useCallback(async () => {
     if (!matchId || !user) return;
 
-    const fetchMatch = async () => {
-      const { data: matchData } = await supabase
-        .from('matches')
+    const { data: matchData } = await supabase
+      .from('matches')
+      .select('*')
+      .eq('id', parseInt(matchId))
+      .single();
+
+    if (!matchData) return;
+    setMatch(matchData);
+
+    const partnerId =
+      matchData.user_a === user.id ? matchData.user_b : matchData.user_a;
+
+    const [itemsRes, profileRes] = await Promise.all([
+      supabase
+        .from('match_items')
+        .select(`
+          *,
+          have_items(*, members(*), goods_types(*)),
+          want_items(*, members(*), goods_types(*))
+        `)
+        .eq('match_id', matchData.id),
+      supabase
+        .from('profiles')
         .select('*')
-        .eq('id', parseInt(matchId))
-        .single();
+        .eq('id', partnerId)
+        .single(),
+    ]);
 
-      if (!matchData) return;
-      setMatch(matchData);
-
-      const partnerId =
-        matchData.user_a === user.id ? matchData.user_b : matchData.user_a;
-
-      const [itemsRes, profileRes] = await Promise.all([
-        supabase
-          .from('match_items')
-          .select(`
-            *,
-            have_items(*, members(*), goods_types(*)),
-            want_items(*, members(*), goods_types(*))
-          `)
-          .eq('match_id', matchData.id),
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', partnerId)
-          .single(),
-      ]);
-
-      if (itemsRes.data) setMatchItems(itemsRes.data);
-      if (profileRes.data) setPartner(profileRes.data);
-      setLoading(false);
-    };
-
-    fetchMatch();
+    if (itemsRes.data) setMatchItems(itemsRes.data);
+    if (profileRes.data) setPartner(profileRes.data);
+    setLoading(false);
   }, [matchId, user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMatch();
+    }, [fetchMatch])
+  );
+
+  // リアルタイムでステータス変更を監視
+  useEffect(() => {
+    if (!matchId) return;
+    const channel = supabase
+      .channel(`match-${matchId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'matches',
+          filter: `id=eq.${matchId}`,
+        },
+        (payload) => {
+          const updated = payload.new as Match;
+          setMatch((prev) => prev ? { ...prev, status: updated.status, updated_at: updated.updated_at } : prev);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [matchId]);
 
   const handleAccept = async () => {
     if (!match) return;
@@ -76,19 +104,36 @@ export default function MatchDetailScreen() {
             .update({ status: 'completed', updated_at: new Date().toISOString() })
             .eq('id', match.id);
 
-          // Mark items as traded
-          for (const item of matchItems) {
+          // have_items/want_itemsの更新はDBトリガー(on_match_completed)が自動実行
+
+          // チャットルーム・位置共有をクリーンアップ
+          const { data: chatRoom } = await supabase
+            .from('chat_rooms')
+            .select('id')
+            .eq('match_id', match.id)
+            .maybeSingle();
+
+          if (chatRoom) {
+            // 位置共有を停止
             await supabase
-              .from('have_items')
-              .update({ is_available: false })
-              .eq('id', item.have_item_id);
+              .from('location_shares')
+              .update({ is_active: false })
+              .eq('chat_room_id', chatRoom.id);
+            // メッセージ削除 → チャットルーム削除
             await supabase
-              .from('want_items')
-              .update({ is_fulfilled: true })
-              .eq('id', item.want_item_id);
+              .from('messages')
+              .delete()
+              .eq('chat_room_id', chatRoom.id);
+            await supabase
+              .from('chat_rooms')
+              .delete()
+              .eq('id', chatRoom.id);
           }
 
           setMatch({ ...match, status: 'completed' });
+          Alert.alert('完了', '取引が完了しました！', [
+            { text: 'OK', onPress: () => router.back() },
+          ]);
         },
       },
     ]);
@@ -106,6 +151,29 @@ export default function MatchDetailScreen() {
             .from('matches')
             .update({ status: 'cancelled', updated_at: new Date().toISOString() })
             .eq('id', match.id);
+
+          // チャットルーム・位置共有をクリーンアップ
+          const { data: chatRoom } = await supabase
+            .from('chat_rooms')
+            .select('id')
+            .eq('match_id', match.id)
+            .maybeSingle();
+
+          if (chatRoom) {
+            await supabase
+              .from('location_shares')
+              .update({ is_active: false })
+              .eq('chat_room_id', chatRoom.id);
+            await supabase
+              .from('messages')
+              .delete()
+              .eq('chat_room_id', chatRoom.id);
+            await supabase
+              .from('chat_rooms')
+              .delete()
+              .eq('id', chatRoom.id);
+          }
+
           setMatch({ ...match, status: 'cancelled' });
         },
       },
@@ -123,7 +191,11 @@ export default function MatchDetailScreen() {
       .maybeSingle();
 
     if (existing) {
-      router.push(`/(tabs)/chat/${existing.id}`);
+      router.dismiss();
+      setTimeout(() => {
+        router.navigate('/(tabs)/chat');
+        setTimeout(() => router.push(`/(tabs)/chat/${existing.id}`), 50);
+      }, 100);
       return;
     }
 
@@ -140,7 +212,11 @@ export default function MatchDetailScreen() {
       .single();
 
     if (newRoom) {
-      router.push(`/(tabs)/chat/${newRoom.id}`);
+      router.dismiss();
+      setTimeout(() => {
+        router.navigate('/(tabs)/chat');
+        setTimeout(() => router.push(`/(tabs)/chat/${newRoom.id}`), 50);
+      }, 100);
     }
   };
 
@@ -188,12 +264,19 @@ export default function MatchDetailScreen() {
           <Text style={styles.sectionTitle}>あなたが渡すもの</Text>
           {myItems.map((item) => (
             <View key={item.id} style={styles.tradeItemRow}>
-              <Text style={styles.memberName}>
-                {item.have_items?.members?.name}
-              </Text>
-              <Text style={styles.goodsName}>
-                {item.have_items?.goods_types?.name}
-              </Text>
+              {item.have_items?.photo_url && (
+                <Pressable onPress={() => setZoomPhoto(item.have_items!.photo_url!)}>
+                  <Image source={{ uri: item.have_items.photo_url }} style={styles.tradePhoto} />
+                </Pressable>
+              )}
+              <View>
+                <Text style={styles.memberName}>
+                  {item.have_items?.members?.name}
+                </Text>
+                <Text style={styles.goodsName}>
+                  {item.have_items?.goods_types?.name}
+                </Text>
+              </View>
             </View>
           ))}
         </Card.Content>
@@ -204,12 +287,19 @@ export default function MatchDetailScreen() {
           <Text style={styles.sectionTitle}>あなたがもらうもの</Text>
           {theirItems.map((item) => (
             <View key={item.id} style={styles.tradeItemRow}>
-              <Text style={styles.memberName}>
-                {item.have_items?.members?.name}
-              </Text>
-              <Text style={styles.goodsName}>
-                {item.have_items?.goods_types?.name}
-              </Text>
+              {item.have_items?.photo_url && (
+                <Pressable onPress={() => setZoomPhoto(item.have_items!.photo_url!)}>
+                  <Image source={{ uri: item.have_items.photo_url }} style={styles.tradePhoto} />
+                </Pressable>
+              )}
+              <View>
+                <Text style={styles.memberName}>
+                  {item.have_items?.members?.name}
+                </Text>
+                <Text style={styles.goodsName}>
+                  {item.have_items?.goods_types?.name}
+                </Text>
+              </View>
             </View>
           ))}
         </Card.Content>
@@ -260,6 +350,32 @@ export default function MatchDetailScreen() {
           </Button>
         </>
       )}
+
+      <Modal
+        visible={!!zoomPhoto}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setZoomPhoto(null)}
+      >
+        <Pressable style={styles.zoomOverlay} onPress={() => setZoomPhoto(null)}>
+          <View style={styles.zoomContainer}>
+            {zoomPhoto && (
+              <Image
+                source={{ uri: zoomPhoto }}
+                style={styles.zoomImage}
+                resizeMode="contain"
+              />
+            )}
+            <IconButton
+              icon="close"
+              iconColor={COLORS.white}
+              size={28}
+              style={styles.zoomClose}
+              onPress={() => setZoomPhoto(null)}
+            />
+          </View>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
@@ -304,6 +420,12 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     paddingVertical: SPACING.xs,
   },
+  tradePhoto: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: COLORS.surface,
+  },
   memberName: {
     fontSize: FONT_SIZE.md,
     fontWeight: 'bold',
@@ -318,5 +440,27 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     marginBottom: SPACING.sm,
+  },
+  zoomOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  zoomContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  zoomImage: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').width,
+  },
+  zoomClose: {
+    position: 'absolute',
+    top: 60,
+    right: 16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
 });

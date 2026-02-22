@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl, Alert } from 'react-native';
+import { View, StyleSheet, FlatList, RefreshControl, Alert, Image } from 'react-native';
 import { Text, FAB, SegmentedButtons, Card, IconButton } from 'react-native-paper';
 import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useEventStore } from '../../src/providers/EventProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
+import { useColors } from '../../src/providers/ThemeProvider';
 import { COLORS, SPACING, FONT_SIZE } from '../../src/shared/utils/constants';
 import type { HaveItem, WantItem } from '../../src/lib/types';
 
@@ -13,6 +14,7 @@ type Tab = 'have' | 'want';
 export default function InventoryScreen() {
   const { user } = useAuth();
   const { activeEvent } = useEventStore();
+  const colors = useColors();
   const [tab, setTab] = useState<Tab>('have');
   const [haveItems, setHaveItems] = useState<HaveItem[]>([]);
   const [wantItems, setWantItems] = useState<WantItem[]>([]);
@@ -60,7 +62,18 @@ export default function InventoryScreen() {
         text: '削除',
         style: 'destructive',
         onPress: async () => {
-          await supabase.from('have_items').delete().eq('id', id);
+          // まずdeleteを試み、外部キー制約エラーならis_available=falseに更新
+          const { error } = await supabase.from('have_items').delete().eq('id', id);
+          if (error) {
+            const { error: updateError } = await supabase
+              .from('have_items')
+              .update({ is_available: false })
+              .eq('id', id);
+            if (updateError) {
+              Alert.alert('エラー', '削除に失敗しました: ' + updateError.message);
+              return;
+            }
+          }
           setHaveItems((prev) => prev.filter((item) => item.id !== id));
         },
       },
@@ -74,7 +87,17 @@ export default function InventoryScreen() {
         text: '削除',
         style: 'destructive',
         onPress: async () => {
-          await supabase.from('want_items').delete().eq('id', id);
+          const { error } = await supabase.from('want_items').delete().eq('id', id);
+          if (error) {
+            const { error: updateError } = await supabase
+              .from('want_items')
+              .update({ is_fulfilled: true })
+              .eq('id', id);
+            if (updateError) {
+              Alert.alert('エラー', '削除に失敗しました: ' + updateError.message);
+              return;
+            }
+          }
           setWantItems((prev) => prev.filter((item) => item.id !== id));
         },
       },
@@ -94,6 +117,9 @@ export default function InventoryScreen() {
   const renderHaveItem = ({ item }: { item: HaveItem }) => (
     <Card style={styles.itemCard}>
       <Card.Content style={styles.itemContent}>
+        {item.photo_url && (
+          <Image source={{ uri: item.photo_url }} style={styles.thumbnail} />
+        )}
         <View style={styles.itemInfo}>
           <Text style={styles.memberName}>{item.members?.name}</Text>
           <Text style={styles.goodsType}>{item.goods_types?.name}</Text>
@@ -208,6 +234,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  thumbnail: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    marginRight: SPACING.sm,
+    backgroundColor: COLORS.surface,
   },
   itemInfo: {
     flexDirection: 'row',
