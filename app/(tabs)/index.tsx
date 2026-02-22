@@ -61,7 +61,10 @@ export default function HomeScreen() {
 
     const { error } = await supabase
       .from('event_participants')
-      .upsert({ event_id: event.id, user_id: user.id });
+      .upsert(
+        { event_id: event.id, user_id: user.id },
+        { onConflict: 'event_id,user_id', ignoreDuplicates: true }
+      );
 
     if (error) {
       Alert.alert('エラー', 'イベントへの参加に失敗しました。\n' + error.message);

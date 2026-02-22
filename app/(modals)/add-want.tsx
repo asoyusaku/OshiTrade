@@ -57,7 +57,7 @@ export default function AddWantScreen() {
     );
 
     if (dbError) {
-      setError('保存に失敗しました');
+      setError('保存に失敗しました: ' + dbError.message);
       setSaving(false);
       return;
     }

@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl, Alert } from 'react-native';
 import { Text, FAB, SegmentedButtons, Card, IconButton } from 'react-native-paper';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useEventStore } from '../../src/providers/EventProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
@@ -41,9 +41,11 @@ export default function InventoryScreen() {
     if (wantRes.data) setWantItems(wantRes.data);
   }, [user, activeEvent]);
 
-  useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchItems();
+    }, [fetchItems])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
