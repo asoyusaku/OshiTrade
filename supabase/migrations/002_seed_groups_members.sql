@@ -79,7 +79,12 @@ INSERT INTO public.members (group_id, name, name_romaji, generation, sort_order)
 -- SAMPLE EVENTS
 -- ============================================================
 INSERT INTO public.events (group_id, name, venue, event_date) VALUES
-  (1, '櫻坂46 4th ARENA TOUR 2026', '東京ドーム', '2026-03-15'),
-  (1, '櫻坂46 4th ARENA TOUR 2026', '大阪城ホール', '2026-03-22'),
-  (2, '=LOVE 全国ツアー2026', 'Zepp Tokyo', '2026-04-05'),
-  (2, '=LOVE 全国ツアー2026', 'Zepp Osaka Bayside', '2026-04-12');
+  -- 櫻坂46 5th YEAR ANNIVERSARY LIVE
+  (1, '櫻坂46 5th YEAR ANNIVERSARY LIVE DAY1', 'MUFGスタジアム（国立競技場）', '2026-04-11'),
+  (1, '櫻坂46 5th YEAR ANNIVERSARY LIVE DAY2', 'MUFGスタジアム（国立競技場）', '2026-04-12'),
+  -- =LOVE 8th ANNIVERSARY PREMIUM TOUR FINAL
+  (2, '=LOVE 8th ANNIVERSARY PREMIUM TOUR FINAL DAY1', '横浜スタジアム', '2026-04-18'),
+  (2, '=LOVE 8th ANNIVERSARY PREMIUM TOUR FINAL DAY2', '横浜スタジアム', '2026-04-19'),
+  -- =LOVE STADIUM LIVE
+  (2, '=LOVE STADIUM LIVE DAY1', 'MUFGスタジアム（国立競技場）', '2026-06-20'),
+  (2, '=LOVE STADIUM LIVE DAY2', 'MUFGスタジアム（国立競技場）', '2026-06-21');
