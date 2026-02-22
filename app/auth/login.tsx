@@ -11,6 +11,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [secureEntry, setSecureEntry] = useState(true);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -36,12 +37,19 @@ export default function LoginScreen() {
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoIcon}>推</Text>
+          </View>
           <Text style={styles.title}>OshiTrade</Text>
           <Text style={styles.subtitle}>推しグッズ交換を、もっとスマートに</Text>
         </View>
 
         <View style={styles.form}>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.error}>{error}</Text>
+            </View>
+          ) : null}
 
           <TextInput
             label="メールアドレス"
@@ -50,7 +58,10 @@ export default function LoginScreen() {
             mode="outlined"
             keyboardType="email-address"
             autoCapitalize="none"
+            left={<TextInput.Icon icon="email-outline" />}
             style={styles.input}
+            outlineColor={COLORS.border}
+            activeOutlineColor={COLORS.primary}
           />
 
           <TextInput
@@ -58,8 +69,17 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
             mode="outlined"
-            secureTextEntry
+            secureTextEntry={secureEntry}
+            left={<TextInput.Icon icon="lock-outline" />}
+            right={
+              <TextInput.Icon
+                icon={secureEntry ? 'eye-off' : 'eye'}
+                onPress={() => setSecureEntry(!secureEntry)}
+              />
+            }
             style={styles.input}
+            outlineColor={COLORS.border}
+            activeOutlineColor={COLORS.primary}
           />
 
           <Button
@@ -68,17 +88,29 @@ export default function LoginScreen() {
             loading={loading}
             disabled={loading}
             style={styles.button}
+            contentStyle={styles.buttonContent}
             buttonColor={COLORS.primary}
+            labelStyle={styles.buttonLabel}
           >
             ログイン
           </Button>
 
-          <View style={styles.linkContainer}>
-            <Text style={styles.linkText}>アカウントをお持ちでない方は </Text>
-            <Link href="/auth/register" style={styles.link}>
-              新規登録
-            </Link>
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>または</Text>
+            <View style={styles.dividerLine} />
           </View>
+
+          <Button
+            mode="outlined"
+            onPress={() => router.push('/auth/register')}
+            style={styles.registerButton}
+            contentStyle={styles.buttonContent}
+            textColor={COLORS.primary}
+            labelStyle={styles.registerLabel}
+          >
+            新規アカウントを作成
+          </Button>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -97,13 +129,33 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.xl + 8,
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  logoIcon: {
+    fontSize: 36,
+    color: COLORS.white,
+    fontWeight: 'bold',
   },
   title: {
     fontSize: FONT_SIZE.xxl,
     fontWeight: 'bold',
     color: COLORS.primary,
     marginBottom: SPACING.xs,
+    letterSpacing: 1,
   },
   subtitle: {
     fontSize: FONT_SIZE.md,
@@ -117,25 +169,46 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: SPACING.sm,
-    paddingVertical: SPACING.xs,
+    borderRadius: 12,
+  },
+  buttonContent: {
+    paddingVertical: 6,
+  },
+  buttonLabel: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: 'bold',
+  },
+  errorContainer: {
+    backgroundColor: '#FFF0F0',
+    padding: SPACING.sm,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.error,
   },
   error: {
     color: COLORS.error,
-    textAlign: 'center',
     fontSize: FONT_SIZE.sm,
   },
-  linkContainer: {
+  dividerRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: SPACING.md,
+    alignItems: 'center',
+    marginVertical: SPACING.sm,
   },
-  linkText: {
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.border,
+  },
+  dividerText: {
     color: COLORS.textSecondary,
+    marginHorizontal: SPACING.md,
     fontSize: FONT_SIZE.sm,
   },
-  link: {
-    color: COLORS.primary,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: 'bold',
+  registerButton: {
+    borderColor: COLORS.primary,
+    borderRadius: 12,
+  },
+  registerLabel: {
+    fontSize: FONT_SIZE.md,
   },
 });

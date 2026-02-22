@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Text, TextInput, Button } from 'react-native-paper';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { COLORS, SPACING, FONT_SIZE } from '../../src/shared/utils/constants';
 
@@ -13,6 +13,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [secureEntry, setSecureEntry] = useState(true);
 
   const handleRegister = async () => {
     if (!username || !email || !password) {
@@ -42,12 +43,16 @@ export default function RegisterScreen() {
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.title}>新規登録</Text>
-          <Text style={styles.subtitle}>OshiTradeのアカウントを作成</Text>
+          <Text style={styles.title}>アカウント作成</Text>
+          <Text style={styles.subtitle}>OshiTradeを始めよう</Text>
         </View>
 
         <View style={styles.form}>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.error}>{error}</Text>
+            </View>
+          ) : null}
 
           <TextInput
             label="ユーザー名 *"
@@ -55,15 +60,21 @@ export default function RegisterScreen() {
             onChangeText={setUsername}
             mode="outlined"
             autoCapitalize="none"
+            left={<TextInput.Icon icon="at" />}
             style={styles.input}
+            outlineColor={COLORS.border}
+            activeOutlineColor={COLORS.primary}
           />
 
           <TextInput
-            label="表示名"
+            label="表示名（任意）"
             value={displayName}
             onChangeText={setDisplayName}
             mode="outlined"
+            left={<TextInput.Icon icon="account-outline" />}
             style={styles.input}
+            outlineColor={COLORS.border}
+            activeOutlineColor={COLORS.primary}
           />
 
           <TextInput
@@ -73,7 +84,10 @@ export default function RegisterScreen() {
             mode="outlined"
             keyboardType="email-address"
             autoCapitalize="none"
+            left={<TextInput.Icon icon="email-outline" />}
             style={styles.input}
+            outlineColor={COLORS.border}
+            activeOutlineColor={COLORS.primary}
           />
 
           <TextInput
@@ -81,9 +95,20 @@ export default function RegisterScreen() {
             value={password}
             onChangeText={setPassword}
             mode="outlined"
-            secureTextEntry
+            secureTextEntry={secureEntry}
+            left={<TextInput.Icon icon="lock-outline" />}
+            right={
+              <TextInput.Icon
+                icon={secureEntry ? 'eye-off' : 'eye'}
+                onPress={() => setSecureEntry(!secureEntry)}
+              />
+            }
             style={styles.input}
+            outlineColor={COLORS.border}
+            activeOutlineColor={COLORS.primary}
           />
+
+          <Text style={styles.hint}>* は必須項目です</Text>
 
           <Button
             mode="contained"
@@ -91,17 +116,21 @@ export default function RegisterScreen() {
             loading={loading}
             disabled={loading}
             style={styles.button}
+            contentStyle={styles.buttonContent}
             buttonColor={COLORS.primary}
+            labelStyle={styles.buttonLabel}
           >
             登録する
           </Button>
 
-          <View style={styles.linkContainer}>
-            <Text style={styles.linkText}>既にアカウントをお持ちの方は </Text>
-            <Link href="/auth/login" style={styles.link}>
-              ログイン
-            </Link>
-          </View>
+          <Button
+            mode="text"
+            onPress={() => router.back()}
+            textColor={COLORS.textSecondary}
+            style={styles.backButton}
+          >
+            ログイン画面に戻る
+          </Button>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -138,27 +167,34 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: COLORS.white,
   },
+  hint: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textSecondary,
+    marginTop: -SPACING.sm,
+  },
   button: {
     marginTop: SPACING.sm,
-    paddingVertical: SPACING.xs,
+    borderRadius: 12,
+  },
+  buttonContent: {
+    paddingVertical: 6,
+  },
+  buttonLabel: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: 'bold',
+  },
+  errorContainer: {
+    backgroundColor: '#FFF0F0',
+    padding: SPACING.sm,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.error,
   },
   error: {
     color: COLORS.error,
-    textAlign: 'center',
     fontSize: FONT_SIZE.sm,
   },
-  linkContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: SPACING.md,
-  },
-  linkText: {
-    color: COLORS.textSecondary,
-    fontSize: FONT_SIZE.sm,
-  },
-  link: {
-    color: COLORS.primary,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: 'bold',
+  backButton: {
+    marginTop: SPACING.xs,
   },
 });

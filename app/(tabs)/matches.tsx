@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
-import { Text, Card, Button, Chip } from 'react-native-paper';
-import { router } from 'expo-router';
+import { Text, Card, Button } from 'react-native-paper';
+import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useEventStore } from '../../src/providers/EventProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
@@ -32,9 +32,11 @@ export default function MatchesScreen() {
     setLoading(false);
   }, [user, activeEvent]);
 
-  useEffect(() => {
-    findMatches();
-  }, [findMatches]);
+  useFocusEffect(
+    useCallback(() => {
+      findMatches();
+    }, [findMatches])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -100,28 +102,41 @@ export default function MatchesScreen() {
   }
 
   const renderMatch = ({ item }: { item: BidirectionalMatch }) => (
-    <Card style={styles.card} onPress={() => handleCreateMatch(item)}>
+    <Card style={styles.card}>
       <Card.Content>
-        <Text style={styles.partnerName}>{item.partner_name}</Text>
+        <View style={styles.partnerRow}>
+          <View style={styles.partnerAvatar}>
+            <Text style={styles.partnerAvatarText}>
+              {(item.partner_name || '?').charAt(0)}
+            </Text>
+          </View>
+          <Text style={styles.partnerName}>{item.partner_name || 'ユーザー'}</Text>
+        </View>
+
         <View style={styles.tradeRow}>
           <View style={styles.tradeItem}>
             <Text style={styles.tradeLabel}>あなたが渡す</Text>
-            <Chip style={styles.giveChip} textStyle={styles.giveChipText}>
-              {item.i_give_member} / {item.i_give_goods}
-            </Chip>
+            <View style={styles.giveTag}>
+              <Text style={styles.giveTagText}>{item.i_give_member}</Text>
+              <Text style={styles.goodsText}>{item.i_give_goods}</Text>
+            </View>
           </View>
           <Text style={styles.arrow}>⇄</Text>
           <View style={styles.tradeItem}>
             <Text style={styles.tradeLabel}>あなたがもらう</Text>
-            <Chip style={styles.getChip} textStyle={styles.getChipText}>
-              {item.i_get_member} / {item.i_get_goods}
-            </Chip>
+            <View style={styles.getTag}>
+              <Text style={styles.getTagText}>{item.i_get_member}</Text>
+              <Text style={styles.goodsText}>{item.i_get_goods}</Text>
+            </View>
           </View>
         </View>
+
         <Button
           mode="contained"
           buttonColor={COLORS.primary}
           style={styles.actionButton}
+          contentStyle={{ paddingVertical: 4 }}
+          labelStyle={{ fontWeight: 'bold' }}
           onPress={() => handleCreateMatch(item)}
         >
           交換をリクエスト
@@ -167,18 +182,40 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: SPACING.md,
     backgroundColor: COLORS.white,
+    borderRadius: 16,
+  },
+  partnerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  partnerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.sm,
+  },
+  partnerAvatarText: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: 'bold',
+    color: COLORS.primaryDark,
   },
   partnerName: {
     fontSize: FONT_SIZE.lg,
     fontWeight: 'bold',
     color: COLORS.text,
-    marginBottom: SPACING.sm,
   },
   tradeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: SPACING.md,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: SPACING.sm,
   },
   tradeItem: {
     flex: 1,
@@ -192,24 +229,38 @@ const styles = StyleSheet.create({
   arrow: {
     fontSize: FONT_SIZE.xl,
     color: COLORS.primary,
-    marginHorizontal: SPACING.sm,
+    marginHorizontal: SPACING.xs,
   },
-  giveChip: {
+  giveTag: {
     backgroundColor: '#FFF3CD',
+    borderRadius: 8,
+    padding: SPACING.xs,
+    alignItems: 'center',
   },
-  giveChipText: {
-    fontSize: FONT_SIZE.xs,
+  giveTagText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: 'bold',
     color: '#856404',
   },
-  getChip: {
+  getTag: {
     backgroundColor: '#D4EDDA',
+    borderRadius: 8,
+    padding: SPACING.xs,
+    alignItems: 'center',
   },
-  getChipText: {
-    fontSize: FONT_SIZE.xs,
+  getTagText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: 'bold',
     color: '#155724',
+  },
+  goodsText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textSecondary,
+    marginTop: 2,
   },
   actionButton: {
     marginTop: SPACING.xs,
+    borderRadius: 12,
   },
   emptyContainer: {
     flex: 1,
