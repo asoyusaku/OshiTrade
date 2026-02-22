@@ -43,6 +43,14 @@ export default function RootLayout() {
               name="(modals)/match-detail"
               options={{ presentation: 'modal', headerShown: true, title: 'マッチ詳細' }}
             />
+            <Stack.Screen
+              name="(modals)/manage-events"
+              options={{ presentation: 'modal', headerShown: true, title: 'イベント管理' }}
+            />
+            <Stack.Screen
+              name="(modals)/suggest-event"
+              options={{ presentation: 'modal', headerShown: true, title: 'イベントを提案' }}
+            />
           </Stack>
         </AuthProvider>
       </PaperProvider>

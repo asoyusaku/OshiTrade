@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl, Alert, TouchableOpacity } from 'react-native';
-import { Text, Card, Chip, Searchbar, Snackbar } from 'react-native-paper';
+import { Text, Card, Chip, Searchbar, Snackbar, Button } from 'react-native-paper';
+import { router } from 'expo-router';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useEventStore } from '../../src/providers/EventProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
@@ -149,6 +150,18 @@ export default function HomeScreen() {
         </View>
       )}
 
+      <View style={styles.suggestRow}>
+        <Button
+          mode="outlined"
+          icon="lightbulb-on-outline"
+          onPress={() => router.push('/(modals)/suggest-event')}
+          style={styles.suggestButton}
+          textColor={COLORS.primary}
+        >
+          イベントを提案する
+        </Button>
+      </View>
+
       <FlatList
         data={filteredEvents}
         renderItem={renderEvent}
@@ -268,6 +281,14 @@ const styles = StyleSheet.create({
   emptyText: {
     color: COLORS.textSecondary,
     fontSize: FONT_SIZE.md,
+  },
+  suggestRow: {
+    paddingHorizontal: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  suggestButton: {
+    borderColor: COLORS.primary,
+    borderRadius: 12,
   },
   snackbar: {
     backgroundColor: COLORS.text,

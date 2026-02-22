@@ -100,12 +100,17 @@ export default function ChatRoomScreen() {
         <Text style={[styles.messageText, isMe && styles.myMessageText]}>
           {item.content}
         </Text>
-        <Text style={[styles.messageTime, isMe && styles.myMessageTime]}>
-          {new Date(item.created_at).toLocaleTimeString('ja-JP', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </Text>
+        <View style={styles.messageFooter}>
+          <Text style={[styles.messageTime, isMe && styles.myMessageTime]}>
+            {new Date(item.created_at).toLocaleTimeString('ja-JP', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
+          {isMe && item.read_at && (
+            <Text style={styles.readLabel}>既読</Text>
+          )}
+        </View>
       </View>
     );
   };
@@ -204,13 +209,22 @@ const styles = StyleSheet.create({
   myMessageText: {
     color: COLORS.white,
   },
+  messageFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+    marginTop: SPACING.xs,
+  },
   messageTime: {
     fontSize: FONT_SIZE.xs,
     color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
-    alignSelf: 'flex-end',
   },
   myMessageTime: {
+    color: 'rgba(255,255,255,0.7)',
+  },
+  readLabel: {
+    fontSize: FONT_SIZE.xs,
     color: 'rgba(255,255,255,0.7)',
   },
   inputContainer: {

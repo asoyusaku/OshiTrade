@@ -122,6 +122,18 @@ export default function ProfileScreen() {
         </Card.Content>
       </Card>
 
+      {profile?.is_admin && (
+        <Button
+          mode="contained"
+          buttonColor={COLORS.secondary}
+          onPress={() => router.push('/(modals)/manage-events')}
+          style={styles.adminButton}
+          icon="shield-crown"
+        >
+          イベント管理
+        </Button>
+      )}
+
       <Button
         mode="outlined"
         onPress={handleSignOut}
@@ -212,6 +224,10 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.textSecondary,
+  },
+  adminButton: {
+    marginTop: SPACING.md,
+    borderRadius: 12,
   },
   logoutButton: {
     marginTop: SPACING.md,

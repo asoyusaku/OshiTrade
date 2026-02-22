@@ -42,8 +42,27 @@ export type Profile = {
   display_name: string | null;
   avatar_url: string | null;
   push_token: string | null;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type SuggestionStatus = 'pending' | 'approved' | 'rejected';
+
+export type EventSuggestion = {
+  id: number;
+  user_id: string;
+  group_id: number;
+  name: string;
+  venue: string | null;
+  event_date: string;
+  note: string | null;
+  status: SuggestionStatus;
+  reviewed_by: string | null;
+  created_at: string;
+  updated_at: string;
+  idol_groups?: IdolGroup;
+  profiles?: Profile;
 };
 
 export type HaveItem = {

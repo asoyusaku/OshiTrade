@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.xs,
   },
   giveTag: {
-    backgroundColor: '#FFF3CD',
+    backgroundColor: COLORS.primaryLight,
     borderRadius: 8,
     padding: SPACING.xs,
     alignItems: 'center',
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   giveTagText: {
     fontSize: FONT_SIZE.sm,
     fontWeight: 'bold',
-    color: '#856404',
+    color: COLORS.primaryDark,
   },
   getTag: {
     backgroundColor: '#D4EDDA',
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   getTagText: {
     fontSize: FONT_SIZE.sm,
     fontWeight: 'bold',
-    color: '#155724',
+    color: COLORS.success,
   },
   goodsText: {
     fontSize: FONT_SIZE.xs,

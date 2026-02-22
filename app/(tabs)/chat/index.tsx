@@ -103,7 +103,7 @@ export default function ChatListScreen() {
   const formatTime = (dateStr: string | null) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
   const renderRoom = ({ item }: { item: ChatRoomDisplay }) => (
