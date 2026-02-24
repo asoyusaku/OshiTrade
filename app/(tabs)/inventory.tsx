@@ -31,14 +31,14 @@ export default function InventoryScreen() {
     const [haveRes, wantRes] = await Promise.all([
       supabase
         .from('have_items')
-        .select('*, members(*), goods_types(*)')
+        .select('*, members(*), goods_types(*), goods_variants(*)')
         .eq('user_id', user.id)
         .eq('event_id', activeEvent.id)
         .eq('is_available', true)
         .order('created_at', { ascending: false }),
       supabase
         .from('want_items')
-        .select('*, members(*), goods_types(*)')
+        .select('*, members(*), goods_types(*), goods_variants(*)')
         .eq('user_id', user.id)
         .eq('event_id', activeEvent.id)
         .eq('is_fulfilled', false)
@@ -128,7 +128,10 @@ export default function InventoryScreen() {
         )}
         <View style={styles.itemInfo}>
           <Text style={styles.memberName}>{item.members?.name}</Text>
-          <Text style={styles.goodsType}>{item.goods_types?.name}</Text>
+          <Text style={styles.goodsType}>
+            {item.goods_types?.name}
+            {item.goods_variants?.variant_name ? ` (${item.goods_variants.variant_name})` : ''}
+          </Text>
           {item.quantity > 1 && (
             <Text style={styles.quantity}>x{item.quantity}</Text>
           )}
@@ -148,7 +151,10 @@ export default function InventoryScreen() {
       <Card.Content style={styles.itemContent}>
         <View style={styles.itemInfo}>
           <Text style={styles.memberName}>{item.members?.name}</Text>
-          <Text style={styles.goodsType}>{item.goods_types?.name}</Text>
+          <Text style={styles.goodsType}>
+            {item.goods_types?.name}
+            {item.goods_variants?.variant_name ? ` (${item.goods_variants.variant_name})` : ''}
+          </Text>
           {item.quantity > 1 && (
             <Text style={styles.quantity}>x{item.quantity}</Text>
           )}

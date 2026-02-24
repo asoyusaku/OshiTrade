@@ -36,8 +36,8 @@ export default function MatchDetailScreen() {
         .from('match_items')
         .select(`
           *,
-          have_items(*, members(*), goods_types(*)),
-          want_items(*, members(*), goods_types(*))
+          have_items(*, members(*), goods_types(*), goods_variants(*)),
+          want_items(*, members(*), goods_types(*), goods_variants(*))
         `)
         .eq('match_id', matchData.id),
       supabase
@@ -299,6 +299,7 @@ export default function MatchDetailScreen() {
                 </Text>
                 <Text style={styles.goodsName}>
                   {item.have_items?.goods_types?.name}
+                  {item.have_items?.goods_variants?.variant_name ? ` (${item.have_items.goods_variants.variant_name})` : ''}
                 </Text>
               </View>
             </View>
@@ -322,6 +323,7 @@ export default function MatchDetailScreen() {
                 </Text>
                 <Text style={styles.goodsName}>
                   {item.have_items?.goods_types?.name}
+                  {item.have_items?.goods_variants?.variant_name ? ` (${item.have_items.goods_variants.variant_name})` : ''}
                 </Text>
               </View>
             </View>

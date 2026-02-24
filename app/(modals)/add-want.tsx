@@ -7,7 +7,7 @@ import { useEventStore } from '../../src/providers/EventProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { useColors } from '../../src/providers/ThemeProvider';
 import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../src/shared/utils/constants';
-import type { Member, GoodsType } from '../../src/lib/types';
+import type { Member, GoodsType, GoodsVariant } from '../../src/lib/types';
 
 export default function AddWantScreen() {
   const { user } = useAuth();
@@ -17,6 +17,8 @@ export default function AddWantScreen() {
   const [goodsTypes, setGoodsTypes] = useState<GoodsType[]>([]);
   const [selectedMember, setSelectedMember] = useState<number | null>(null);
   const [selectedGoods, setSelectedGoods] = useState<number | null>(null);
+  const [variants, setVariants] = useState<GoodsVariant[]>([]);
+  const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -37,6 +39,24 @@ export default function AddWantScreen() {
     });
   }, [activeEvent]);
 
+  // グッズ種類が変わったらバリエーション取得（グループ単位）
+  useEffect(() => {
+    if (!activeEvent || !selectedGoods) {
+      setVariants([]);
+      setSelectedVariant(null);
+      return;
+    }
+    supabase
+      .from('goods_variants')
+      .select('*')
+      .eq('group_id', activeEvent.group_id)
+      .eq('goods_type_id', selectedGoods)
+      .order('variant_name')
+      .then(({ data }) => {
+        if (data) setVariants(data);
+      });
+  }, [activeEvent, selectedGoods]);
+
   const handleSave = async () => {
     if (!selectedMember || !selectedGoods) {
       setError('メンバーとグッズの種類を選択してください');
@@ -53,10 +73,11 @@ export default function AddWantScreen() {
         event_id: activeEvent.id,
         member_id: selectedMember,
         goods_type_id: selectedGoods,
+        variant_id: selectedVariant,
         quantity: parseInt(quantity) || 1,
         is_fulfilled: false,
       },
-      { onConflict: 'user_id,event_id,member_id,goods_type_id' }
+      { onConflict: 'user_id,event_id,member_id,goods_type_id,variant_id' }
     );
 
     if (dbError) {
@@ -108,7 +129,40 @@ export default function AddWantScreen() {
         ))}
       </View>
 
-      <Text style={styles.stepTitle}>3. 数量</Text>
+      {selectedGoods && variants.length > 0 && (
+        <>
+          <Text style={styles.stepTitle}>3. バリエーション（任意）</Text>
+          <View style={styles.chipGrid}>
+            <Chip
+              selected={selectedVariant === null}
+              onPress={() => setSelectedVariant(null)}
+              style={[
+                styles.chip,
+                selectedVariant === null && { backgroundColor: colors.primary },
+              ]}
+              textStyle={selectedVariant === null ? styles.selectedChipText : undefined}
+            >
+              指定なし
+            </Chip>
+            {variants.map((v) => (
+              <Chip
+                key={v.id}
+                selected={selectedVariant === v.id}
+                onPress={() => setSelectedVariant(v.id)}
+                style={[
+                  styles.chip,
+                  selectedVariant === v.id && { backgroundColor: colors.primary },
+                ]}
+                textStyle={selectedVariant === v.id ? styles.selectedChipText : undefined}
+              >
+                {v.variant_name}
+              </Chip>
+            ))}
+          </View>
+        </>
+      )}
+
+      <Text style={styles.stepTitle}>4. 数量</Text>
       <View style={styles.quantityRow}>
         <Pressable
           style={[styles.quantityButton, { backgroundColor: colors.primary }]}

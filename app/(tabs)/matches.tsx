@@ -12,7 +12,7 @@ import type { BidirectionalMatch, Match } from '../../src/lib/types';
 
 type IncomingRequest = Match & {
   requester_name: string;
-  items: { give_member: string; give_goods: string; get_member: string; get_goods: string }[];
+  items: { give_member: string; give_goods: string; give_variant: string | null; get_member: string; get_goods: string; get_variant: string | null }[];
 };
 
 export default function MatchesScreen() {
@@ -41,7 +41,7 @@ export default function MatchesScreen() {
         .from('matches')
         .select(`
           *,
-          match_items(*, have_items(*, members(*), goods_types(*)))
+          match_items(*, have_items(*, members(*), goods_types(*), goods_variants(*)))
         `)
         .eq('user_b', user.id)
         .eq('event_id', activeEvent.id)
@@ -92,8 +92,10 @@ export default function MatchesScreen() {
         const items = myItems.map((mi: any, idx: number) => ({
           give_member: mi.have_items?.members?.name || '',
           give_goods: mi.have_items?.goods_types?.name || '',
+          give_variant: mi.have_items?.goods_variants?.variant_name || null,
           get_member: theirItems[idx]?.have_items?.members?.name || '',
           get_goods: theirItems[idx]?.have_items?.goods_types?.name || '',
+          get_variant: theirItems[idx]?.have_items?.goods_variants?.variant_name || null,
         }));
         return {
           ...r,
@@ -130,7 +132,7 @@ export default function MatchesScreen() {
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'matches',
           filter: `event_id=eq.${activeEvent.id}`,
@@ -270,7 +272,10 @@ export default function MatchesScreen() {
               <Text style={styles.tradeLabel}>あなたが渡す</Text>
               <View style={styles.giveTag}>
                 <Text style={styles.giveTagText}>{item.i_give_member}</Text>
-                <Text style={styles.goodsText}>{item.i_give_goods}</Text>
+                <Text style={styles.goodsText}>
+                  {item.i_give_goods}
+                  {item.i_give_variant ? ` (${item.i_give_variant})` : ''}
+                </Text>
               </View>
             </View>
             <Text style={styles.arrow}>⇄</Text>
@@ -278,7 +283,10 @@ export default function MatchesScreen() {
               <Text style={styles.tradeLabel}>あなたがもらう</Text>
               <View style={styles.getTag}>
                 <Text style={styles.getTagText}>{item.i_get_member}</Text>
-                <Text style={styles.goodsText}>{item.i_get_goods}</Text>
+                <Text style={styles.goodsText}>
+                  {item.i_get_goods}
+                  {item.i_get_variant ? ` (${item.i_get_variant})` : ''}
+                </Text>
               </View>
             </View>
           </View>
@@ -332,7 +340,10 @@ export default function MatchesScreen() {
                       <Text style={styles.tradeLabel}>あなたが渡す</Text>
                       <View style={[styles.giveTag, { backgroundColor: colors.primaryLight }]}>
                         <Text style={[styles.giveTagText, { color: colors.primaryDark }]}>{item.give_member}</Text>
-                        <Text style={styles.goodsText}>{item.give_goods}</Text>
+                        <Text style={styles.goodsText}>
+                          {item.give_goods}
+                          {item.give_variant ? ` (${item.give_variant})` : ''}
+                        </Text>
                       </View>
                     </View>
                     <Text style={[styles.arrow, { color: colors.primary }]}>⇄</Text>
@@ -340,7 +351,10 @@ export default function MatchesScreen() {
                       <Text style={styles.tradeLabel}>あなたがもらう</Text>
                       <View style={styles.getTag}>
                         <Text style={styles.getTagText}>{item.get_member}</Text>
-                        <Text style={styles.goodsText}>{item.get_goods}</Text>
+                        <Text style={styles.goodsText}>
+                          {item.get_goods}
+                          {item.get_variant ? ` (${item.get_variant})` : ''}
+                        </Text>
                       </View>
                     </View>
                   </View>

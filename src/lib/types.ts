@@ -24,6 +24,15 @@ export type GoodsType = {
   sort_order: number;
 };
 
+export type GoodsVariant = {
+  id: number;
+  group_id: number;
+  goods_type_id: number;
+  variant_name: string;
+  created_by: string | null;
+  created_at: string;
+};
+
 export type Event = {
   id: number;
   group_id: number;
@@ -73,6 +82,7 @@ export type HaveItem = {
   event_id: number;
   member_id: number;
   goods_type_id: number;
+  variant_id: number | null;
   quantity: number;
   note: string | null;
   photo_url: string | null;
@@ -80,6 +90,7 @@ export type HaveItem = {
   created_at: string;
   members?: Member;
   goods_types?: GoodsType;
+  goods_variants?: GoodsVariant;
 };
 
 export type WantItem = {
@@ -88,11 +99,13 @@ export type WantItem = {
   event_id: number;
   member_id: number;
   goods_type_id: number;
+  variant_id: number | null;
   quantity: number;
   is_fulfilled: boolean;
   created_at: string;
   members?: Member;
   goods_types?: GoodsType;
+  goods_variants?: GoodsVariant;
 };
 
 export type MatchStatus = 'pending' | 'accepted' | 'completed' | 'cancelled';
@@ -156,8 +169,10 @@ export type BidirectionalMatch = {
   partner_name: string;
   i_give_member: string;
   i_give_goods: string;
+  i_give_variant: string | null;
   i_get_member: string;
   i_get_goods: string;
+  i_get_variant: string | null;
   my_have_id: number;
   my_want_id: number;
   their_have_id: number;

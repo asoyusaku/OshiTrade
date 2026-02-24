@@ -5,9 +5,9 @@ import { router } from 'expo-router';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../src/shared/utils/constants';
-import type { Event, IdolGroup, EventSuggestion } from '../../src/lib/types';
+import type { Event, IdolGroup, EventSuggestion, GoodsType, GoodsVariant } from '../../src/lib/types';
 
-type Tab = 'events' | 'suggestions';
+type Tab = 'events' | 'suggestions' | 'variants';
 
 export default function ManageEventsScreen() {
   const { user, profile } = useAuth();
@@ -16,6 +16,13 @@ export default function ManageEventsScreen() {
   const [suggestions, setSuggestions] = useState<EventSuggestion[]>([]);
   const [groups, setGroups] = useState<IdolGroup[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // バリエーション管理
+  const [goodsTypes, setGoodsTypes] = useState<GoodsType[]>([]);
+  const [variants, setVariants] = useState<GoodsVariant[]>([]);
+  const [variantGroupId, setVariantGroupId] = useState<number | null>(null);
+  const [variantGoodsTypeId, setVariantGoodsTypeId] = useState<number | null>(null);
+  const [newVariantName, setNewVariantName] = useState('');
 
   // Add/Edit form
   const [showForm, setShowForm] = useState(false);
@@ -27,7 +34,7 @@ export default function ManageEventsScreen() {
   const [saving, setSaving] = useState(false);
 
   const fetchData = useCallback(async () => {
-    const [eventsRes, groupsRes, suggestionsRes] = await Promise.all([
+    const [eventsRes, groupsRes, suggestionsRes, goodsTypesRes] = await Promise.all([
       supabase
         .from('events')
         .select('*, idol_groups(*)')
@@ -42,6 +49,7 @@ export default function ManageEventsScreen() {
         .select('*, idol_groups(*), profiles:user_id(*)')
         .eq('status', 'pending')
         .order('created_at', { ascending: false }),
+      supabase.from('goods_types').select('*').order('sort_order'),
     ]);
     if (eventsRes.data) setEvents(eventsRes.data);
     if (groupsRes.data) setGroups(groupsRes.data);
@@ -49,6 +57,7 @@ export default function ManageEventsScreen() {
       console.warn('suggestions fetch error:', suggestionsRes.error.message);
     }
     if (suggestionsRes.data) setSuggestions(suggestionsRes.data);
+    if (goodsTypesRes.data) setGoodsTypes(goodsTypesRes.data);
     setLoading(false);
   }, []);
 
@@ -197,6 +206,144 @@ export default function ManageEventsScreen() {
     if (!error) fetchData();
   };
 
+  // ---------- バリエーション管理 ----------
+  const fetchVariants = useCallback(async (groupId: number, goodsTypeId: number) => {
+    const { data } = await supabase
+      .from('goods_variants')
+      .select('*')
+      .eq('group_id', groupId)
+      .eq('goods_type_id', goodsTypeId)
+      .order('variant_name');
+    if (data) setVariants(data);
+  }, []);
+
+  useEffect(() => {
+    if (variantGroupId && variantGoodsTypeId) {
+      fetchVariants(variantGroupId, variantGoodsTypeId);
+    } else {
+      setVariants([]);
+    }
+  }, [variantGroupId, variantGoodsTypeId, fetchVariants]);
+
+  const handleAddVariant = async () => {
+    const name = newVariantName.trim();
+    if (!name || !variantGroupId || !variantGoodsTypeId || !user) return;
+
+    const { error } = await supabase.from('goods_variants').insert({
+      group_id: variantGroupId,
+      goods_type_id: variantGoodsTypeId,
+      variant_name: name,
+      created_by: user.id,
+    });
+
+    if (error) {
+      if (error.code === '23505') {
+        Alert.alert('エラー', 'このバリエーションは既に存在します');
+      } else {
+        Alert.alert('エラー', '追加に失敗しました: ' + error.message);
+      }
+      return;
+    }
+
+    setNewVariantName('');
+    fetchVariants(variantGroupId, variantGoodsTypeId);
+  };
+
+  const handleDeleteVariant = (variant: GoodsVariant) => {
+    Alert.alert('削除確認', `「${variant.variant_name}」を削除しますか？`, [
+      { text: 'キャンセル', style: 'cancel' },
+      {
+        text: '削除',
+        style: 'destructive',
+        onPress: async () => {
+          await supabase.from('goods_variants').delete().eq('id', variant.id);
+          if (variantGroupId && variantGoodsTypeId) {
+            fetchVariants(variantGroupId, variantGoodsTypeId);
+          }
+        },
+      },
+    ]);
+  };
+
+  const renderVariantsTab = () => (
+    <View style={styles.variantsContainer}>
+      <Text style={styles.formLabel}>グループ</Text>
+      <View style={styles.chipGrid}>
+        {groups.map((g) => (
+          <TouchableOpacity
+            key={g.id}
+            style={[styles.groupChip, variantGroupId === g.id && styles.selectedGroupChip]}
+            onPress={() => {
+              setVariantGroupId(g.id);
+              setVariantGoodsTypeId(null);
+            }}
+          >
+            <Text style={[styles.groupChipText, variantGroupId === g.id && styles.selectedGroupChipText]}>
+              {g.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {variantGroupId && (
+        <>
+          <Text style={[styles.formLabel, { marginTop: SPACING.md }]}>グッズの種類</Text>
+          <View style={styles.chipGrid}>
+            {goodsTypes.map((g) => (
+              <TouchableOpacity
+                key={g.id}
+                style={[styles.groupChip, variantGoodsTypeId === g.id && styles.selectedGroupChip]}
+                onPress={() => setVariantGoodsTypeId(g.id)}
+              >
+                <Text style={[styles.groupChipText, variantGoodsTypeId === g.id && styles.selectedGroupChipText]}>
+                  {g.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
+
+      {variantGroupId && variantGoodsTypeId && (
+        <>
+          <Text style={[styles.formLabel, { marginTop: SPACING.md }]}>
+            バリエーション ({variants.length}件)
+          </Text>
+          {variants.map((v) => (
+            <View key={v.id} style={styles.variantRow}>
+              <Text style={styles.variantName}>{v.variant_name}</Text>
+              <IconButton
+                icon="delete-outline"
+                iconColor={COLORS.error}
+                size={20}
+                onPress={() => handleDeleteVariant(v)}
+              />
+            </View>
+          ))}
+          <View style={styles.addVariantRow}>
+            <TextInput
+              value={newVariantName}
+              onChangeText={setNewVariantName}
+              mode="outlined"
+              placeholder="例：制服衣装"
+              dense
+              style={styles.addVariantInput}
+            />
+            <Button
+              mode="contained"
+              onPress={handleAddVariant}
+              disabled={!newVariantName.trim()}
+              compact
+              buttonColor={COLORS.primary}
+            >
+              追加
+            </Button>
+          </View>
+        </>
+      )}
+    </View>
+  );
+
   const renderEvent = ({ item }: { item: Event }) => (
     <Card style={[styles.card, !item.is_active && styles.inactiveCard]}>
       <Card.Content>
@@ -291,9 +438,19 @@ export default function ManageEventsScreen() {
             提案 ({suggestions.length})
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabButton, tab === 'variants' && styles.activeTab]}
+          onPress={() => setTab('variants')}
+        >
+          <Text style={[styles.tabText, tab === 'variants' && styles.activeTabText]}>
+            バリエーション
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {tab === 'events' ? (
+      {tab === 'variants' ? (
+        renderVariantsTab()
+      ) : tab === 'events' ? (
         <FlatList
           data={events}
           renderItem={renderEvent}
@@ -581,5 +738,32 @@ const styles = StyleSheet.create({
   },
   formCancelBtn: {
     borderColor: COLORS.border,
+  },
+  variantsContainer: {
+    padding: SPACING.md,
+  },
+  variantRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    marginBottom: SPACING.xs,
+  },
+  variantName: {
+    fontSize: FONT_SIZE.md,
+    color: COLORS.text,
+  },
+  addVariantRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
+  addVariantInput: {
+    flex: 1,
+    backgroundColor: COLORS.white,
   },
 });
