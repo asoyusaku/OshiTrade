@@ -3,9 +3,13 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../../src/providers/ThemeProvider';
 import { COLORS } from '../../src/shared/utils/constants';
+import { useUnreadChatCount } from '../../src/shared/hooks/useUnreadChatCount';
+import { useIncomingMatchCount } from '../../src/shared/hooks/useIncomingMatchCount';
 
 export default function TabsLayout() {
   const colors = useColors();
+  const unreadChatCount = useUnreadChatCount();
+  const incomingMatchCount = useIncomingMatchCount();
 
   return (
     <Tabs
@@ -47,6 +51,7 @@ export default function TabsLayout() {
         name="matches"
         options={{
           title: 'マッチ',
+          tabBarBadge: incomingMatchCount > 0 ? incomingMatchCount : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="swap-horizontal" size={size} color={color} />
           ),
@@ -57,6 +62,7 @@ export default function TabsLayout() {
         options={{
           title: 'チャット',
           headerShown: false,
+          tabBarBadge: unreadChatCount > 0 ? unreadChatCount : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles" size={size} color={color} />
           ),

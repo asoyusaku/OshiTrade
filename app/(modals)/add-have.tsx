@@ -7,12 +7,14 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useEventStore } from '../../src/providers/EventProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
-import { COLORS, SPACING, FONT_SIZE } from '../../src/shared/utils/constants';
+import { useColors } from '../../src/providers/ThemeProvider';
+import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../src/shared/utils/constants';
 import type { Member, GoodsType } from '../../src/lib/types';
 
 export default function AddHaveScreen() {
   const { user } = useAuth();
   const { activeEvent } = useEventStore();
+  const colors = useColors();
   const [members, setMembers] = useState<Member[]>([]);
   const [goodsTypes, setGoodsTypes] = useState<GoodsType[]>([]);
   const [selectedMember, setSelectedMember] = useState<number | null>(null);
@@ -159,7 +161,7 @@ export default function AddHaveScreen() {
             onPress={() => setSelectedMember(m.id)}
             style={[
               styles.chip,
-              selectedMember === m.id && styles.selectedChip,
+              selectedMember === m.id && { backgroundColor: colors.primary },
             ]}
             textStyle={selectedMember === m.id ? styles.selectedChipText : undefined}
           >
@@ -177,7 +179,7 @@ export default function AddHaveScreen() {
             onPress={() => setSelectedGoods(g.id)}
             style={[
               styles.chip,
-              selectedGoods === g.id && styles.selectedChip,
+              selectedGoods === g.id && { backgroundColor: colors.primary },
             ]}
             textStyle={selectedGoods === g.id ? styles.selectedChipText : undefined}
           >
@@ -189,14 +191,14 @@ export default function AddHaveScreen() {
       <Text style={styles.stepTitle}>3. 数量</Text>
       <View style={styles.quantityRow}>
         <Pressable
-          style={styles.quantityButton}
+          style={[styles.quantityButton, { backgroundColor: colors.primary }]}
           onPress={() => setQuantity(String(Math.max(1, parseInt(quantity) - 1)))}
         >
           <Text style={styles.quantityButtonText}>-</Text>
         </Pressable>
         <Text style={styles.quantityText}>{quantity}</Text>
         <Pressable
-          style={styles.quantityButton}
+          style={[styles.quantityButton, { backgroundColor: colors.primary }]}
           onPress={() => setQuantity(String(parseInt(quantity) + 1))}
         >
           <Text style={styles.quantityButtonText}>+</Text>
@@ -212,7 +214,7 @@ export default function AddHaveScreen() {
               icon="camera-retake"
               size={24}
               onPress={showImageOptions}
-              iconColor={COLORS.primary}
+              iconColor={colors.primary}
             />
             <IconButton
               icon="delete"
@@ -243,7 +245,7 @@ export default function AddHaveScreen() {
         onPress={handleSave}
         loading={saving}
         disabled={saving || !selectedMember || !selectedGoods}
-        buttonColor={COLORS.primary}
+        buttonColor={colors.primary}
         style={styles.saveButton}
       >
         追加する
@@ -290,7 +292,7 @@ const styles = StyleSheet.create({
   quantityButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: BORDER_RADIUS.xl,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -313,7 +315,7 @@ const styles = StyleSheet.create({
   photoPreview: {
     width: '100%',
     height: 200,
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.md,
     backgroundColor: COLORS.surface,
   },
   photoActions: {
@@ -324,7 +326,7 @@ const styles = StyleSheet.create({
   photoPlaceholder: {
     width: '100%',
     height: 120,
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.md,
     borderWidth: 2,
     borderColor: COLORS.border,
     borderStyle: 'dashed',

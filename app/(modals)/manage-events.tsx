@@ -4,7 +4,7 @@ import { Text, Button, TextInput, Card, FAB, Portal, Modal, IconButton } from 'r
 import { router } from 'expo-router';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useAuth } from '../../src/providers/AuthProvider';
-import { COLORS, SPACING, FONT_SIZE } from '../../src/shared/utils/constants';
+import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../src/shared/utils/constants';
 import type { Event, IdolGroup, EventSuggestion } from '../../src/lib/types';
 
 type Tab = 'events' | 'suggestions';
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: SPACING.sm,
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.md,
   },
   inactiveCard: {
     opacity: 0.6,
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primaryLight,
     paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.md,
     alignSelf: 'flex-start',
     marginBottom: SPACING.xs,
   },
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     margin: SPACING.md,
     padding: SPACING.lg,
-    borderRadius: 16,
+    borderRadius: BORDER_RADIUS.lg,
   },
   modalTitle: {
     fontSize: FONT_SIZE.xl,
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   groupChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: BORDER_RADIUS.xl,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,

@@ -5,7 +5,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../../src/shared/utils/supabase';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useColors } from '../../../src/providers/ThemeProvider';
-import { COLORS, SPACING, FONT_SIZE } from '../../../src/shared/utils/constants';
+import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../../src/shared/utils/constants';
+import { CardSkeleton } from '../../../src/shared/components/CardSkeleton';
 
 type ChatRoomDisplay = {
   id: number;
@@ -22,9 +23,13 @@ export default function ChatListScreen() {
   const colors = useColors();
   const [chatRooms, setChatRooms] = useState<ChatRoomDisplay[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchChatRooms = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const { data: rooms } = await supabase
       .from('chat_rooms')
@@ -74,6 +79,7 @@ export default function ChatListScreen() {
     }
 
     setChatRooms(displayRooms);
+    setLoading(false);
   }, [user]);
 
   useFocusEffect(
@@ -151,12 +157,20 @@ export default function ChatListScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>
-              チャットはまだありません。{'\n'}
-              マッチした相手とチャットを始めましょう！
-            </Text>
-          </View>
+          loading ? (
+            <View style={{ padding: SPACING.md }}>
+              <CardSkeleton variant="list" />
+              <CardSkeleton variant="list" />
+              <CardSkeleton variant="list" />
+            </View>
+          ) : (
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>
+                チャットはまだありません。{'\n'}
+                マッチした相手とチャットを始めましょう！
+              </Text>
+            </View>
+          )
         }
       />
     </View>
@@ -207,7 +221,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   badge: {
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.md,
     minWidth: 24,
     height: 24,
     justifyContent: 'center',

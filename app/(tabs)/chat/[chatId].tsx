@@ -14,7 +14,7 @@ import * as Location from 'expo-location';
 import { supabase } from '../../../src/shared/utils/supabase';
 import { useAuth } from '../../../src/providers/AuthProvider';
 import { useColors } from '../../../src/providers/ThemeProvider';
-import { COLORS, SPACING, FONT_SIZE } from '../../../src/shared/utils/constants';
+import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../../src/shared/utils/constants';
 import type { Message, LocationShare } from '../../../src/lib/types';
 
 export default function ChatRoomScreen() {
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   locationButton: {
-    borderRadius: 20,
+    borderRadius: BORDER_RADIUS.xl,
   },
   sharingStatus: {
     fontSize: FONT_SIZE.xs,
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   messageBubble: {
     maxWidth: '75%',
     padding: SPACING.sm,
-    borderRadius: 16,
+    borderRadius: BORDER_RADIUS.lg,
     marginBottom: SPACING.sm,
   },
   myMessage: {

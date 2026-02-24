@@ -4,7 +4,7 @@ import { Text, Button, Card, Chip, Divider, IconButton } from 'react-native-pape
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useAuth } from '../../src/providers/AuthProvider';
-import { COLORS, SPACING, FONT_SIZE } from '../../src/shared/utils/constants';
+import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../src/shared/utils/constants';
 import type { Match, MatchItem, Profile } from '../../src/lib/types';
 
 export default function MatchDetailScreen() {
@@ -84,7 +84,31 @@ export default function MatchDetailScreen() {
   }, [matchId]);
 
   const handleAccept = async () => {
-    if (!match) return;
+    if (!match || !user) return;
+
+    // 自分が渡すアイテムの在庫チェック
+    const myGiveItems = matchItems.filter((i) => i.giver_id === user.id);
+    for (const item of myGiveItems) {
+      if (!item.have_items) continue;
+      // 同じ have_item が他の承認済みマッチで使用されている数を確認
+      const { data: usedMatches } = await supabase
+        .from('match_items')
+        .select('id, matches!inner(status)')
+        .eq('have_item_id', item.have_item_id)
+        .eq('giver_id', user.id)
+        .eq('matches.status', 'accepted');
+
+      const usedCount = usedMatches?.length ?? 0;
+      const quantity = item.have_items.quantity ?? 1;
+      if (usedCount >= quantity) {
+        Alert.alert(
+          '在庫不足',
+          `${item.have_items.members?.name} ${item.have_items.goods_types?.name} の在庫がありません。先に承認済みの取引を完了またはキャンセルしてください。`
+        );
+        return;
+      }
+    }
+
     await supabase
       .from('matches')
       .update({ status: 'accepted', updated_at: new Date().toISOString() })
@@ -423,7 +447,7 @@ const styles = StyleSheet.create({
   tradePhoto: {
     width: 56,
     height: 56,
-    borderRadius: 8,
+    borderRadius: BORDER_RADIUS.sm,
     backgroundColor: COLORS.surface,
   },
   memberName: {

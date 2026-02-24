@@ -9,6 +9,7 @@ export const COLORS = {
   textSecondary: '#6C757D',
   border: '#E9ECEF',
   success: '#28A745',
+  successLight: '#D4EDDA',
   warning: '#FFC107',
   error: '#DC3545',
   white: '#FFFFFF',
@@ -29,4 +30,12 @@ export const FONT_SIZE = {
   lg: 18,
   xl: 24,
   xxl: 32,
+};
+
+export const BORDER_RADIUS = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  full: 9999,
 };

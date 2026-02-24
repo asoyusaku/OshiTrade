@@ -14,7 +14,13 @@ export default function ChatLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: 'チャット' }} />
-      <Stack.Screen name="[chatId]" options={{ title: 'チャット' }} />
+      <Stack.Screen
+        name="[chatId]"
+        options={{
+          title: 'チャット',
+          headerBackTitle: 'チャット',
+        }}
+      />
     </Stack>
   );
 }

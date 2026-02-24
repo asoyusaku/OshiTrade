@@ -4,7 +4,7 @@ import { Text, Button, TextInput } from 'react-native-paper';
 import { router } from 'expo-router';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useAuth } from '../../src/providers/AuthProvider';
-import { COLORS, SPACING, FONT_SIZE } from '../../src/shared/utils/constants';
+import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../src/shared/utils/constants';
 import type { IdolGroup } from '../../src/lib/types';
 
 export default function SuggestEventScreen() {
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     backgroundColor: COLORS.surface,
     padding: SPACING.md,
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.md,
     marginBottom: SPACING.md,
     lineHeight: 22,
   },
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   groupChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: BORDER_RADIUS.xl,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -195,6 +195,6 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: SPACING.xl,
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.md,
   },
 });

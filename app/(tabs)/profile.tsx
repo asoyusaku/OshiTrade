@@ -6,7 +6,7 @@ import { useAuth } from '../../src/providers/AuthProvider';
 import { useColors } from '../../src/providers/ThemeProvider';
 import { useThemeStore } from '../../src/providers/ThemeProvider';
 import { supabase } from '../../src/shared/utils/supabase';
-import { COLORS, SPACING, FONT_SIZE } from '../../src/shared/utils/constants';
+import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../src/shared/utils/constants';
 import type { IdolGroup, Member } from '../../src/lib/types';
 
 export default function ProfileScreen() {
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   oshiColorDot: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: BORDER_RADIUS.xl,
     marginRight: SPACING.md,
   },
   oshiInfo: {
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   },
   adminButton: {
     marginTop: SPACING.md,
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.md,
   },
   logoutButton: {
     marginTop: SPACING.md,
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
   modal: {
     backgroundColor: COLORS.white,
     margin: SPACING.lg,
-    borderRadius: 20,
+    borderRadius: BORDER_RADIUS.xl,
     maxHeight: '100%',
     overflow: 'hidden',
   },
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
   memberColor: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: BORDER_RADIUS.md,
     marginRight: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.lg,
     marginTop: SPACING.md,
     marginBottom: SPACING.md,
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.md,
     borderColor: COLORS.border,
   },
 });

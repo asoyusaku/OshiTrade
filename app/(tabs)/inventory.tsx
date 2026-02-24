@@ -6,7 +6,8 @@ import { supabase } from '../../src/shared/utils/supabase';
 import { useEventStore } from '../../src/providers/EventProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { useColors } from '../../src/providers/ThemeProvider';
-import { COLORS, SPACING, FONT_SIZE } from '../../src/shared/utils/constants';
+import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../src/shared/utils/constants';
+import { CardSkeleton } from '../../src/shared/components/CardSkeleton';
 import type { HaveItem, WantItem } from '../../src/lib/types';
 
 type Tab = 'have' | 'want';
@@ -19,9 +20,13 @@ export default function InventoryScreen() {
   const [haveItems, setHaveItems] = useState<HaveItem[]>([]);
   const [wantItems, setWantItems] = useState<WantItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchItems = useCallback(async () => {
-    if (!user || !activeEvent) return;
+    if (!user || !activeEvent) {
+      setLoading(false);
+      return;
+    }
 
     const [haveRes, wantRes] = await Promise.all([
       supabase
@@ -41,6 +46,7 @@ export default function InventoryScreen() {
     ]);
     if (haveRes.data) setHaveItems(haveRes.data);
     if (wantRes.data) setWantItems(wantRes.data);
+    setLoading(false);
   }, [user, activeEvent]);
 
   useFocusEffect(
@@ -179,9 +185,17 @@ export default function InventoryScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>持っているグッズを追加しましょう</Text>
-            </View>
+            loading ? (
+              <View style={styles.list}>
+                <CardSkeleton variant="list" />
+                <CardSkeleton variant="list" />
+                <CardSkeleton variant="list" />
+              </View>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>持っているグッズを追加しましょう</Text>
+              </View>
+            )
           }
         />
       ) : (
@@ -194,16 +208,24 @@ export default function InventoryScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>欲しいグッズを追加しましょう</Text>
-            </View>
+            loading ? (
+              <View style={styles.list}>
+                <CardSkeleton variant="list" />
+                <CardSkeleton variant="list" />
+                <CardSkeleton variant="list" />
+              </View>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>欲しいグッズを追加しましょう</Text>
+              </View>
+            )
           }
         />
       )}
 
       <FAB
         icon="plus"
-        style={styles.fab}
+        style={[styles.fab, { backgroundColor: colors.primary }]}
         color={COLORS.white}
         onPress={() =>
           router.push(tab === 'have' ? '/(modals)/add-have' : '/(modals)/add-want')
@@ -238,7 +260,7 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: 48,
     height: 48,
-    borderRadius: 8,
+    borderRadius: BORDER_RADIUS.sm,
     marginRight: SPACING.sm,
     backgroundColor: COLORS.surface,
   },

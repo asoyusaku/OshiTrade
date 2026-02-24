@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, FlatList, RefreshControl, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text, Card, Chip, Searchbar, Snackbar, Button } from 'react-native-paper';
 import { router } from 'expo-router';
 import { supabase } from '../../src/shared/utils/supabase';
 import { useEventStore } from '../../src/providers/EventProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { useColors } from '../../src/providers/ThemeProvider';
-import { COLORS, SPACING, FONT_SIZE } from '../../src/shared/utils/constants';
+import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../../src/shared/utils/constants';
 import type { Event, IdolGroup } from '../../src/lib/types';
 
 export default function HomeScreen() {
@@ -178,11 +178,16 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>
-              {loading ? '読み込み中...' : 'イベントがありません'}
-            </Text>
-          </View>
+          loading ? (
+            <View style={styles.empty}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={[styles.emptyText, { marginTop: SPACING.md }]}>読み込み中...</Text>
+            </View>
+          ) : (
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>イベントがありません</Text>
+            </View>
+          )
         }
       />
 
@@ -218,12 +223,12 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   activeEventBanner: {
-    backgroundColor: '#FF6B9D', // Will be overridden dynamically
+    backgroundColor: COLORS.primary,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     marginHorizontal: SPACING.md,
     marginBottom: SPACING.sm,
-    borderRadius: 8,
+    borderRadius: BORDER_RADIUS.sm,
   },
   bannerText: {
     color: COLORS.white,
@@ -250,7 +255,7 @@ const styles = StyleSheet.create({
   groupTag: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.md,
   },
   activeGroupTag: {},
   groupTagText: {
@@ -261,7 +266,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.success,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.md,
   },
   activeTagText: {
     color: COLORS.white,
@@ -291,7 +296,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   suggestButton: {
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.md,
   },
   snackbar: {
     backgroundColor: COLORS.text,
